@@ -35,21 +35,23 @@ contract Auction{
 function setAuction(IERC20 token , uint amount) external tokenCheck(token) {
     require(block.timestamp < timePeriod,"the auction is closed ");
     require(amount>100,"minimum bid should be greater than 100 ");
+    require(currentBid < amount,"amount should be greater than the previous bid");
 
     token.safeTransferFrom(msg.sender, address(this), amount);
-    contractBalance = token.balanceOf(address(this));
+   
     userAuctionAmount[msg.sender] = amount;
-    if(currentBid < userAuctionAmount[msg.sender]){
-        require(currentBid < userAuctionAmount[msg.sender],"amount should be greater than the previous bid");
-   
-        currentBid = userAuctionAmount[msg.sender]; 
-         winner = msg.sender;
-
-    }else{
-
-    }
-   
-    }    
+    
+    currentBid = userAuctionAmount[msg.sender];
+     contractBalance = token.balanceOf(address(this));
+    winner = msg.sender;
+    }  
+    
+function retriveAutionedAmount(IERC20 token) public  tokenCheck(token) returns(bool) {
+  require(userAuctionAmount[msg.sender]<currentBid);
+  token.safeTransferFrom(address(this),msg.sender,userAuctionAmount[msg.sender]);
+  contractBalance -= userAuctionAmount[msg.sender];
+  return true;
+  }
 
 function transferRewards(IERC20 _token) external view tokenCheck(_token)  returns(address) {
     
@@ -57,10 +59,8 @@ function transferRewards(IERC20 _token) external view tokenCheck(_token)  return
     
      require(msg.sender == owner,"only can announce the winner");
      uint value = currentBid;
-     
-
-
-     return winner;
+     _token.safeTransfer(msg.sender,value);
+       return winner;
 
    }
 }
