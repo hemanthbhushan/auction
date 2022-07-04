@@ -71,7 +71,7 @@ contract Auction{
         
     function retriveAutionedAmount(IERC20 token) public  tokenCheck(token) returns(bool) {
         require(userAuctionAmount[msg.sender]<currentBid);
-        token.safeTransferFrom(address(this),msg.sender,userAuctionAmount[msg.sender]);
+        token.safeTransfer(address(this),msg.sender,userAuctionAmount[msg.sender]);
         checkUser[msg.sender] = true;
         return checkUser[msg.sender];
     }
