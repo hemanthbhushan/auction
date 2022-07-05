@@ -31,13 +31,31 @@ contract Auction{
 
 
     modifier onlyOwner(address msgSender){
-         require(msgSender == owner,"only owner can announce the winner");
+         require(msgSender == owner,"only owner can access this function");
          _;
     }
     modifier checkAmount(uint amount){
         require(amount>100,"minimum bid should be greater than 100 ");
         _;
     }
+    modifier checkEndTime(){
+        require(block.timestamp < endTimePeriod,"the auction is closed ");
+        _;
+    }
+    modifier checkEndAuctionPeriod(){
+        require(endTimePeriod < block.timestamp,"there still time for auction ");
+        _;
+
+    }
+    modifier checkToken(IERC20 token){
+         require(token == BidToken,"only BidtokenCP token");
+         _;
+             }
+    modifier checkStartAuction(){
+        require(startAuction == true,"auction did not started by the owner yet");
+        _;
+
+    }    
    
 
     function _startAuction(IERC20 _BidToken,IERC20 _RewardToken,uint _timePeriod) external onlyOwner(msg.sender) {
@@ -57,10 +75,8 @@ contract Auction{
 
 
     // } 
-    function bidBoredApe(IERC20 token , uint amount) external  checkAmount(amount) {
-        require(startAuction == true,"auction did not started by the owner yet");
-        require(block.timestamp < endTimePeriod,"the auction is closed ");
-        require(token == BidToken,"only BidtokenCP token");
+    function bidBoredApe(IERC20 token , uint amount) external checkStartAuction checkEndTime checkAmount(amount) checkToken(token)   {
+        
         userAuctionAmountBA[msg.sender] += amount;
 
         require(userAuctionAmountBA[msg.sender]>currentBidBA,"bid should be greater than the previous bid");
@@ -77,12 +93,9 @@ contract Auction{
 
 
 
-    function bidCryptoPunk(IERC20 token , uint amount) external  checkAmount(amount) {
-        require(startAuction == true,"auction did not started by the owner yet");
-        require(block.timestamp <  endTimePeriod,"the auction is closed ");
-        require(token == BidToken,"only BidtokenCP token");
-
-        userAuctionAmountCP[msg.sender] += amount;
+    function bidCryptoPunk(IERC20 token , uint amount) external checkStartAuction checkEndTime checkAmount(amount) checkToken(token) {
+       
+         userAuctionAmountCP[msg.sender] += amount;
 
         require(userAuctionAmountCP[msg.sender]>currentBidCP,"bid should be greater than the previous bid");
 
@@ -105,26 +118,23 @@ contract Auction{
         return noofBidders;
         
     } 
-    function retriveAutionedAmountBA(IERC20 token) public   returns(bool) {
-        require(userAuctionAmountBA[msg.sender]<currentBidBA,"Your current height bidder u cant withdraw now");
-        require(token == BidToken,"only Bidtoken token");
+    function retriveAutionedAmountBA(IERC20 token) public checkToken(token)   returns(bool) {
+        require(userAuctionAmountBA[msg.sender]<currentBidBA,"Your current highest bidder u cant withdraw now");
         token.safeTransfer(msg.sender,userAuctionAmountBA[msg.sender]);
         userAuctionAmountBA[msg.sender] = 0;
         
         return true;
     }  
-    function retriveAutionedAmountCP(IERC20 token) public  returns(bool) {
-        require(userAuctionAmountCP[msg.sender]<currentBidCP,"Your current height bidder u cant withdraw now");
-        require(token == BidToken,"only Bidtoken token");
+    function retriveAutionedAmountCP(IERC20 token) checkToken(token) public  returns(bool) {
+        require(userAuctionAmountCP[msg.sender]<currentBidCP,"Your current highest bidder u cant withdraw now");
         token.safeTransfer(msg.sender,userAuctionAmountCP[msg.sender]);
         userAuctionAmountCP[msg.sender] = 0;
         
         return true;
     }
       
-    function announceWinnerOfBA(IERC20 _Rewardtoken) external    onlyOwner(msg.sender)  returns(bool) {
-        require(endTimePeriod < block.timestamp,"there still time for auction ");
-        require(_Rewardtoken == RewardToken,"only BidtokenCP token");
+    function announceWinnerOfBA() external    onlyOwner(msg.sender) checkEndAuctionPeriod()  returns(bool) {
+        IERC20 _Rewardtoken = IERC20(RewardToken);
         uint valueBA = currentBidBA;
         _Rewardtoken.safeTransfer(winnerBA,valueBA);
          startAuction = false;
@@ -133,9 +143,8 @@ contract Auction{
         
 
     }
-     function announceWinnerOfCP(IERC20 _Rewardtoken) external    onlyOwner(msg.sender)  returns(bool) {
-        require(endTimePeriod < block.timestamp,"there still time for auction ");
-        require(_Rewardtoken == RewardToken,"only BidtokenCP token");
+     function announceWinnerOfCP() external    onlyOwner(msg.sender) checkEndAuctionPeriod() returns(bool) {
+        IERC20 _Rewardtoken = IERC20(RewardToken);
         uint valueCP = currentBidCP;
         _Rewardtoken.safeTransfer(winnerCP,valueCP);
         startAuction = false;
