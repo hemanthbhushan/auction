@@ -1,153 +1,89 @@
-const { inputToConfig } = require("@ethereum-waffle/compiler");
-const { getSigners } = require("@nomiclabs/hardhat-ethers/dist/src/helpers");
-const { expect } = require("chai");
-const { ethers, waffle } = require("hardhat");
-const { isCallTrace } = require("hardhat/internal/hardhat-network/stack-traces/message-trace");
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.2;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-describe("Auction", ()=>{
-  let Auction;
-  let auction;
-  let owner;
-  let signer1;
-  let signer2;
-  let Token;
-  let token;
-  beforeEach(async ()=>{
-    [owner,signer1,signer2] = await ethers.getSigners();
-    Token = await ethers.getContractFactory("ZipperToken",signer2.address);
-    token= await Token.deploy();
+contract Auction{
+    using SafeERC20 for IERC20;
+    IERC20 public Zipper;
+    uint public timePeriod;
+    uint count;
+    uint noofUsers;
+    address public owner;
     
-    Auction = await ethers.getContractFactory("Auction");
+    mapping(address=>uint) public  userAuctionAmount;
+    mapping(address => bool) checkUser;
+    uint public currentBid;
+    address public winner;
+    uint public blockStamp = block.timestamp;
+ 
+
+
+    constructor(IERC20 _token ,uint _timePeriod){
+        Zipper = _token;
+        
+        owner = msg.sender;
+        timePeriod = blockStamp + _timePeriod;
+    }
+
+
+    modifier tokenCheck(IERC20 _token){
+        require(_token == Zipper,"only Zipper token");
+        _;
+    }
+    modifier onlyOwner(address msgSender){
+         require(msgSender == owner,"only owner can announce the winner");
+         _;
+    }
+    modifier checkAmount(uint amount){
+        require(amount>100,"minimum bid should be greater than 100 ");
+        _;
+    }
+    modifier checkAuctionOpen(){
+         require(block.timestamp < timePeriod,"the auction is closed ");
+         _;
+
+    }
+    modifier checkAuctionClose(){
+         require(timePeriod > block.timestamp,"there still time for auction ");
+         _;
+
+    }
     
-    //Auction = await ethers.getContractFactory("Auction",owner.address); both are same
-    auction = await Auction.deploy(token.address,720);
-    auction.deployed();
 
-    
-
-    
-  })
-  describe("check constructor", ()=>{
-    it("check token",async ()=>{
-      const auctionAddress = await auction.Zipper();
-      expect(auctionAddress).to.equal(token.address);
-
-    });
-    it("check owner",async ()=>{
-      const ownerAddress = await auction.owner();
-      expect(ownerAddress).to.equal(owner.address);
-    })
-    // it("checking timePeriod",async ()=>{
-    //   const period = await auction.timePeriod();
-    //   expect(period).to.be.greaterThan(auction.blockStamp());
-
-    // })
-
-
-  })
-  describe("check setAuction  function",()=>{
-    describe("with condition sastified",()=>{
-      it("check contract balance",async ()=>{
-        const signerBalance = await token.balanceOf(owner.address);
-        const contractBalance = await token.balanceOf(auction.address);
-
-        // expect(signerBalance).to.equal(1000000000000000000000000);
-        expect(contractBalance).to.equal(0);
-
-        await auction.connect(owner).setAuction(token.address,10000);
+    function setAuction(IERC20 token , uint amount) external tokenCheck(token) checkAmount(amount) checkAuctionOpen() {
+         require(amount>currentBid,"amount should be greater than the previous bid");
        
-
-        const signerBalance1 = await token.balanceOf(owner.address);
-        const contractBalance1 = await token.balanceOf(auction.address);
-        // expect(signerBalance1).to.equal(signerBalance-10000000);
-        expect(contractBalance1).to.equal(10000);
-      })
-
-        it("checking for user auction amount",async ()=>{
-          await auction.connect(owner).setAuction(token.address,1000);
-          const checkUserAmount = await auction.userAuctionAmount(owner.address);
-          expect(checkUserAmount).to.equal(1000);
-
-        });
-        it("current Bid",async ()=>{
-          await auction.connect(owner).setAuction(token.address,101);
-          await auction.connect(owner).setAuction(token.address,103);
-          const checkCurrentBid = await auction.currentBid();
-          expect(checkCurrentBid).to.equal(103);
-        })
-        it("checking winner",async ()=>{
-          await auction.connect(owner).setAuction(token.address,101);
-          
-          await auction.connect(owner).setAuction(token.address,102);
-          
-          await auction.connect(owner).setAuction(token.address,1022);
-          const checkWinner = await  auction.winner();
-          expect(checkWinner).to.equal(owner.address);
-        })
-
-
-    });
-
-   
-
-    describe("with the condition not sastified by require",()=>{
-      it("revert with only zipper  ", async ()=>{
-        expect(auction.setAuction(signer2.address,1001)).to.be.revertedWith("only Zipper token");
-        
-      })
-      it("revert with minimum bid should be greater than 100  ", async ()=>{
-        expect(auction.setAuction(signer1.address,100)).to.be.revertedWith("minimum bid should be greater than 100");
-        
-      })
-      })
-  });
-
-//end of the setAuction
-describe(" transfer rewards",()=>{
-  it("checking transfer rewards",async ()=>{
-    await auction.connect(owner).setAuction(token.address,1000);
-  const balance =   await auction.contractBalance(token.address);
-    expect(balance).to.equal(1000);
-  })
-})
-
- 
-
-
-
-  })
-
-
-
-
-
-
-
-  // describe("check for retrive Auction Amount",()=>{
-//   describe("if require sastified",()=>{
-
-//   });
-//   describe("if required not sastified",()=>{
-//     it("if current bit is not greater",async ()=>{
-//       await auction.connect(owner).setAuction(token.address,101);
-//       await auction.connect(owner).setAuction(token.address,102);
-      
-//     })
-//   })
-
-// });
-
-
-
- 
-    // await auction.connect(owner).setAuction(token.address,101);
-    // const balanceOfUser = await token.balanceOf(owner.address);
+        token.safeTransferFrom(msg.sender, address(this), amount);
     
+        userAuctionAmount[msg.sender] = amount;
+        
+        currentBid = userAuctionAmount[msg.sender];
+        
+        winner = msg.sender;
+        if(checkUser[msg.sender]==false){
+            noofUsers+=1;
+            checkUser[msg.sender]= true;
+        }
+        emit currentBidDetails(currentBid,msg.sender);
+        }  
+        
+    function retriveAutionedAmount(IERC20 token) public  tokenCheck(token) returns(bool) {
+        require(userAuctionAmount[msg.sender]<currentBid);
+        token.safeTransfer(msg.sender,userAuctionAmount[msg.sender]);
+        checkUser[msg.sender] = true;
+        return checkUser[msg.sender];
+    }
 
-    // const checkCurrentBid = await auction.currentBid();
-    // // expect(checkCurrentBid).to.equal(101);
-    //  await  auction.connect(owner).transferRewards(token.address);
+    function transferRewards(IERC20 token) external checkAuctionClose()  tokenCheck(token) onlyOwner(msg.sender)  returns(address) {
+        uint value = currentBid;
+        token.safeTransfer(winner,value);
 
-    // expect(checktransferRewards).to.equal(owner.address);
-    // expect(balanceOfUser).to.equal(balanceOfUser+101);
+        emit winnerAnnounced(winner,value);
+        return winner;
+        
 
+    }
+    event currentBidDetails(uint bidAmount, address auctionedUser);
+    event winnerAnnounced(address finalWinner,uint bid);
+}
