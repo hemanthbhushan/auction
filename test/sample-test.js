@@ -49,7 +49,7 @@ describe("Auction",()=>{
 
         })
         describe("checking boredApe , cryptoPunks",()=>{
-            describe("checking boredApe with require sastified",()=>{
+            describe("checking boredApe , cryptoPunks with require sastified",()=>{
                 it("calling boredApe",async ()=>{
                     await bidToken.mintToken(signer1.address,10000);
                     await bidToken.mintToken(signer2.address,10000);
@@ -78,17 +78,55 @@ describe("Auction",()=>{
                     expect(await auction.winnerBA()).to.equal(signer1.address);
                     expect(await auction.winnerCP()).to.equal(signer5.address);
                     expect(await auction.totalOnOfBidders()).to.equal(6);
-
+                    expect(await auction.userAuctionAmountBA(signer1.address)).to.equal(203);
                 })
 
 
             })
-            describe("checking boredApe with require not-sastified",()=>{
+            describe("checking boredApe , crypto punks with require not-sastified",()=>{
+                it("check the bid functions with wrong require values",async ()=>{
+                    await bidToken.mintToken(signer1.address,10000);
+                    await bidToken.mintToken(signer2.address,10000);
+                    await bidToken.mintToken(signer3.address,10000);
+                    await bidToken.mintToken(signer4.address,10000);
+                    await bidToken.mintToken(signer5.address,10000);
+
+                    expect(auction.bidBoredApe(bidToken.address,101)).to.be.revertedWith("auction did not started by the owner yet");
+                    expect(auction.connect(signer1)._startAuction(bidToken.address,rewardToken.address,10)).to.be.revertedWith("only owner can access this function");
+
+                    await auction._startAuction(bidToken.address,rewardToken.address,10);
+
+                    expect(auction.bidBoredApe(signer1.address,100)).to.be.revertedWith("minimum bid should be greater than 100");
+                    expect(auction.bidBoredApe(signer1.address,101)).to.be.revertedWith("only BidtokenCP token");
+                    expect(auction.bidCryptoPunk(signer1.address,100)).to.be.revertedWith("minimum bid should be greater than 100");
+                    expect(auction.bidCryptoPunk(signer1.address,101)).to.be.revertedWith("only BidtokenCP token");
+                     
+                    const currentBidBA = await auction.currentBidBA();
+                    const currentBidCP = await auction.currentBidCP();
+                    const contractBalance = await bidToken.balanceOf(auction.address);
+
+                    expect(contractBalance).to.equal(0);
+                    expect(currentBidBA).to.equal(0);
+                    expect(currentBidCP).to.equal(0);
+                    // expect(await auction.winnerBA()).to.equal(address(0));
+                    // expect(await auction.winnerCP()).to.equal(address(0));
+                    expect(await auction.totalOnOfBidders()).to.equal(0);
+                    })
                 
             })
 
         });
-        
+        describe("Testing for retrive Auctioned amount of BA ,CP",()=>{
+            describe("conditions true for require statement",()=>{
+                await auction._startAuction(bidToken.address,rewardToken.address,10);
+                
+
+            
+            })
+            describe("conditions false for require statement",()=>{
+            
+            })
+        })
 
 
 

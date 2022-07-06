@@ -22,6 +22,7 @@ contract Auction{
     address public winnerBA;
     bool public startAuction;
     uint public totalOnOfBidders;
+    mapping(address => bool) public alreadyUser;
  
 
 
@@ -36,7 +37,10 @@ contract Auction{
     }
     modifier checkAmount(uint amount){
         require(amount>100,"minimum bid should be greater than 100 ");
-        _;
+        // if(amount>0||alreadyUser[msgSender] == true){
+        //     alreadyUser[msgSender] = true;
+        // }revert("amount should be greater than zero or u should already be a bidder");
+         _;
     }
     modifier checkEndTime(){
         require(block.timestamp < endTimePeriod,"the auction is closed ");
