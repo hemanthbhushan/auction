@@ -162,7 +162,7 @@ describe("Auction",()=>{
                  
                 expect(auction.announceWinnerOfCP()).to.be.revertedWith('there still time for auction ');
                 expect(auction.announceWinnerOfBA()).to.be.revertedWith('there still time for auction ');
-                //  change end of section to test this
+                //  change end of timeperiod to test this
                 // const contractBalanceBefore = await rewardToken.balanceOf(auction.address);
                 // await auction.announceWinnerOfBA();
                 // await auction.announceWinnerOfCP();
