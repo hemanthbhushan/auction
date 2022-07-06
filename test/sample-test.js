@@ -28,6 +28,11 @@ describe("Auction",()=>{
 
         Auction = await ethers.getContractFactory("Auction");
         auction = await Auction.deploy();
+        await bidToken.mintToken(signer1.address,10000);
+        await bidToken.mintToken(signer2.address,10000);
+        await bidToken.mintToken(signer3.address,10000);
+        await bidToken.mintToken(signer4.address,10000);
+        await bidToken.mintToken(signer5.address,10000);
 
     })
     describe("checking constructor",()=>{
@@ -51,11 +56,7 @@ describe("Auction",()=>{
         describe("checking boredApe , cryptoPunks",()=>{
             describe("checking boredApe , cryptoPunks with require sastified",()=>{
                 it("calling boredApe",async ()=>{
-                    await bidToken.mintToken(signer1.address,10000);
-                    await bidToken.mintToken(signer2.address,10000);
-                    await bidToken.mintToken(signer3.address,10000);
-                    await bidToken.mintToken(signer4.address,10000);
-                    await bidToken.mintToken(signer5.address,10000);
+                    
 
                     await auction._startAuction(bidToken.address,rewardToken.address,150);
 
@@ -66,7 +67,7 @@ describe("Auction",()=>{
                     await auction.connect(signer4).bidBoredApe(bidToken.address,105);
                     await auction.connect(signer4).bidCryptoPunk(bidToken.address,105);
                     await auction.connect(signer5).bidCryptoPunk(bidToken.address,106);
-                    await auction.connect(signer1).bidBoredApe(bidToken.address,101);;
+                    await auction.connect(signer1).bidBoredApe(bidToken.address,101);
 
                     
                     const currentBidBA = await auction.currentBidBA();
@@ -85,12 +86,7 @@ describe("Auction",()=>{
             })
             describe("checking boredApe , crypto punks with require not-sastified",()=>{
                 it("check the bid functions with wrong require values",async ()=>{
-                    await bidToken.mintToken(signer1.address,10000);
-                    await bidToken.mintToken(signer2.address,10000);
-                    await bidToken.mintToken(signer3.address,10000);
-                    await bidToken.mintToken(signer4.address,10000);
-                    await bidToken.mintToken(signer5.address,10000);
-
+                    
                     expect(auction.bidBoredApe(bidToken.address,101)).to.be.revertedWith("auction did not started by the owner yet");
                     expect(auction.connect(signer1)._startAuction(bidToken.address,rewardToken.address,10)).to.be.revertedWith("only owner can access this function");
 
@@ -117,16 +113,77 @@ describe("Auction",()=>{
 
         });
         describe("Testing for retrive Auctioned amount of BA ,CP",()=>{
-            describe("conditions true for require statement",()=>{
-                await auction._startAuction(bidToken.address,rewardToken.address,10);
+                it("check the function ",async ()=>{
+               
+
+                await auction._startAuction(bidToken.address,rewardToken.address,150);
+
+                await auction.connect(owner).bidBoredApe(bidToken.address,101);
+                await auction.connect(signer1).bidBoredApe(bidToken.address,102);
+                await auction.connect(signer2).bidBoredApe(bidToken.address,103);
+                await auction.connect(signer3).bidBoredApe(bidToken.address,104);
+                await auction.connect(signer4).bidBoredApe(bidToken.address,105);
+                await auction.connect(signer4).bidCryptoPunk(bidToken.address,105);
+                await auction.connect(signer5).bidCryptoPunk(bidToken.address,106);
+                await auction.connect(signer1).bidBoredApe(bidToken.address,101);
+                const balanceOFContractBefore = await bidToken.balanceOf(auction.address);
+
+                await auction.connect(signer2).retriveAutionedAmountBA(bidToken.address);
+                await auction.connect(signer4).retriveAutionedAmountCP(bidToken.address);
+                const balanceOFContractAfter = await bidToken.balanceOf(auction.address);
+
+                expect(balanceOFContractAfter).to.equal(balanceOFContractBefore-208);
+
+                expect(await auction.userAuctionAmountBA(signer2.address)).to.equal(0);
+                expect(await auction.userAuctionAmountCP(signer4.address)).to.equal(0);
+
+               
+
+                expect(auction.connect(signer1).retriveAutionedAmountBA(bidToken.address)).to.be.revertedWith("Your current highest bidder u cant withdraw now");
+                expect(auction.connect(signer5).retriveAutionedAmountCP(bidToken.address)).to.be.revertedWith("Your current highest bidder u cant withdraw now");
+                expect(auction.connect(signer5).retriveAutionedAmountBA(signer1.address)).to.be.revertedWith("only BidtokenCP token");
+                expect(auction.connect(signer5).retriveAutionedAmountCP(signer2.address)).to.be.revertedWith("only BidtokenCP token");
+                })
+        })
+        describe("checking for winner announcement function",()=>{
+            it("checking the winner",async ()=>{
+               await rewardToken.mintToken(auction.address,100000000);
+                await auction._startAuction(bidToken.address,rewardToken.address,11);
+
+                await auction.connect(owner).bidBoredApe(bidToken.address,101);
+                await auction.connect(signer1).bidBoredApe(bidToken.address,102);
+                await auction.connect(signer2).bidBoredApe(bidToken.address,103);
+                await auction.connect(signer3).bidBoredApe(bidToken.address,104);
+                await auction.connect(signer4).bidBoredApe(bidToken.address,105);
+                await auction.connect(signer4).bidCryptoPunk(bidToken.address,105);
+                await auction.connect(signer5).bidCryptoPunk(bidToken.address,106);
+                await auction.connect(signer1).bidBoredApe(bidToken.address,101);
+                expect(auction._startAuction(bidToken.address,rewardToken.address,10)).to.be.revertedWith("wait till the time period to complete");
+                 
+                expect(auction.announceWinnerOfCP()).to.be.revertedWith('there still time for auction ');
+                expect(auction.announceWinnerOfBA()).to.be.revertedWith('there still time for auction ');
+                //  change end of section to test this
+                // const contractBalanceBefore = await rewardToken.balanceOf(auction.address);
+                // await auction.announceWinnerOfBA();
+                // await auction.announceWinnerOfCP();
+                // const contractBalanceAfter = await rewardToken.balanceOf(auction.address);
+                // expect(contractBalanceAfter).to.equal(contractBalanceBefore-309);
+
+                // expect(await auction.winnerCP()).to.equal(signer5.address);
+                // expect(await auction.winnerBA()).to.equal(signer1.address);
+                // expect(await auction.startAuction()).to.be.equal(false);
+               
+                
                 
 
-            
+                
+
+
             })
-            describe("conditions false for require statement",()=>{
-            
-            })
+
+
         })
+
 
 
 

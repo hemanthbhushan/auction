@@ -47,7 +47,7 @@ contract Auction{
         _;
     }
     modifier checkEndAuctionPeriod(){
-        require(endTimePeriod < block.timestamp,"there still time for auction ");
+        require(endTimePeriod > block.timestamp,"there still time for auction ");
         _;
 
     }
