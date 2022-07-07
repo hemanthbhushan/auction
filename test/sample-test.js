@@ -67,19 +67,19 @@ describe("Auction",()=>{
                     await auction.connect(signer4).bidBoredApe(bidToken.address,105);
                     await auction.connect(signer4).bidCryptoPunk(bidToken.address,105);
                     await auction.connect(signer5).bidCryptoPunk(bidToken.address,106);
-                    await auction.connect(signer1).bidBoredApe(bidToken.address,101);
+                    await auction.connect(signer1).bidBoredApe(bidToken.address,11);
 
                     
                     const currentBidBA = await auction.currentBidBA();
                     const currentBidCP = await auction.currentBidCP();
                     const contractBalance = await bidToken.balanceOf(auction.address);
-                    expect(contractBalance).to.equal(827);
-                    expect(currentBidBA).to.equal(203);
+                    expect(contractBalance).to.equal(737);
+                    expect(currentBidBA).to.equal(113);
                     expect(currentBidCP).to.equal(106);
                     expect(await auction.winnerBA()).to.equal(signer1.address);
                     expect(await auction.winnerCP()).to.equal(signer5.address);
                     expect(await auction.totalOnOfBidders()).to.equal(6);
-                    expect(await auction.userAuctionAmountBA(signer1.address)).to.equal(203);
+                    expect(await auction.userAuctionAmountBA(signer1.address)).to.equal(113);
                 })
 
 
@@ -92,9 +92,9 @@ describe("Auction",()=>{
 
                     await auction._startAuction(bidToken.address,rewardToken.address,10);
 
-                    expect(auction.bidBoredApe(signer1.address,100)).to.be.revertedWith("minimum bid should be greater than 100");
+                    // expect(auction.bidBoredApe(signer1.address,100)).to.be.revertedWith("amount is less than 100");
                     expect(auction.bidBoredApe(signer1.address,101)).to.be.revertedWith("only BidtokenCP token");
-                    expect(auction.bidCryptoPunk(signer1.address,100)).to.be.revertedWith("minimum bid should be greater than 100");
+                    expect(auction.bidCryptoPunk(signer1.address,100)).to.be.revertedWith("amount is less than 100");
                     expect(auction.bidCryptoPunk(signer1.address,101)).to.be.revertedWith("only BidtokenCP token");
                      
                     const currentBidBA = await auction.currentBidBA();
@@ -125,7 +125,7 @@ describe("Auction",()=>{
                 await auction.connect(signer4).bidBoredApe(bidToken.address,105);
                 await auction.connect(signer4).bidCryptoPunk(bidToken.address,105);
                 await auction.connect(signer5).bidCryptoPunk(bidToken.address,106);
-                await auction.connect(signer1).bidBoredApe(bidToken.address,101);
+                await auction.connect(signer1).bidBoredApe(bidToken.address,11);
                 const balanceOFContractBefore = await bidToken.balanceOf(auction.address);
 
                 await auction.connect(signer2).retriveAutionedAmountBA(bidToken.address);
@@ -157,17 +157,17 @@ describe("Auction",()=>{
                 await auction.connect(signer4).bidBoredApe(bidToken.address,105);
                 await auction.connect(signer4).bidCryptoPunk(bidToken.address,105);
                 await auction.connect(signer5).bidCryptoPunk(bidToken.address,106);
-                await auction.connect(signer1).bidBoredApe(bidToken.address,101);
+                await auction.connect(signer1).bidBoredApe(bidToken.address,11);
                 expect(auction._startAuction(bidToken.address,rewardToken.address,10)).to.be.revertedWith("wait till the time period to complete");
                  
                 expect(auction.announceWinnerOfCP()).to.be.revertedWith('there still time for auction ');
                 expect(auction.announceWinnerOfBA()).to.be.revertedWith('there still time for auction ');
-                //  change end of timeperiod to test this
+                // //  change end of timeperiod to test this
                 // const contractBalanceBefore = await rewardToken.balanceOf(auction.address);
                 // await auction.announceWinnerOfBA();
                 // await auction.announceWinnerOfCP();
                 // const contractBalanceAfter = await rewardToken.balanceOf(auction.address);
-                // expect(contractBalanceAfter).to.equal(contractBalanceBefore-309);
+                // expect(contractBalanceAfter).to.equal(contractBalanceBefore-219);
 
                 // expect(await auction.winnerCP()).to.equal(signer5.address);
                 // expect(await auction.winnerBA()).to.equal(signer1.address);

@@ -35,11 +35,14 @@ contract Auction{
          require(msgSender == owner,"only owner can access this function");
          _;
     }
-    modifier checkAmount(uint amount){
-        require(amount>100,"minimum bid should be greater than 100 ");
-        // if(amount>0||alreadyUser[msgSender] == true){
-        //     alreadyUser[msgSender] = true;
-        // }revert("amount should be greater than zero or u should already be a bidder");
+    modifier checkAmount(uint amount,address msgSender){
+        // require(amount>100,"minimum bid should be greater than 100 ");
+        if(amount<=100&&alreadyUser[msgSender] == false){
+            revert("amount is less than 100 ");
+        }else{
+            alreadyUser[msgSender] = true;
+        }
+        
          _;
     }
     modifier checkEndTime(){
@@ -79,7 +82,7 @@ contract Auction{
 
 
     // } 
-    function bidBoredApe(IERC20 token , uint amount) external checkStartAuction checkEndTime checkAmount(amount) checkToken(token)   {
+    function bidBoredApe(IERC20 token , uint amount) external checkStartAuction checkEndTime checkAmount(amount,msg.sender) checkToken(token)   {
         
         userAuctionAmountBA[msg.sender] += amount;
 
@@ -97,7 +100,7 @@ contract Auction{
 
 
 
-    function bidCryptoPunk(IERC20 token , uint amount) external checkStartAuction checkEndTime checkAmount(amount) checkToken(token) {
+    function bidCryptoPunk(IERC20 token , uint amount) external checkStartAuction checkEndTime checkAmount(amount,msg.sender) checkToken(token) {
        
          userAuctionAmountCP[msg.sender] += amount;
 
